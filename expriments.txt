@@ -1,0 +1,14 @@
+
+# gcc_trace2.dpc.gz
+example Streaming Prefetcher
+Simulation complete. Instructions retired: 3099757 Cycles elapsed: 11229238 IPC: 0.276043
+
+example Next_line_prefetcher
+Simulation complete. Instructions retired: 3099757 Cycles elapsed: 10905258 IPC: 0.284244
+
+example ampm_lite_prefetcher
+Simulation complete. Instructions retired: 3099757 Cycles elapsed: 9139582 IPC: 0.339157
+
+IMP (stream)
+Simulation complete. Instructions retired: 3099757 Cycles elapsed: 10640040 IPC: 0.291329
+
