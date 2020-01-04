@@ -44,7 +44,7 @@ typedef struct TrainingUnit {
 // Address Mapping entry, holds an address and a confidence counter 
 typedef struct AddressMapping {
     Addr_t address;
-    unsigned counter;
+    unsigned int counter;
 }AddressMapping_t;
 
 /*
@@ -97,9 +97,8 @@ void insertTrainingEntry(Addr_t pc,Addr_t lastAddress)
     int find = -1;
     while (1)
     {
-        if(trainingUnit.TrainingUnitEntries[clock_pointer].clock_tag==0)
+        if(trainingUnit.TrainingUnitEntries[clock_pointer].clock_tag == 0)
         {
-            // trainingUnit.TrainingUnitEntries[clock_pointer].valid = 1;
             trainingUnit.TrainingUnitEntries[clock_pointer].tag = pc;
             trainingUnit.TrainingUnitEntries[clock_pointer].lastAddress = lastAddress;
             trainingUnit.TrainingUnitEntries[clock_pointer].clock_tag = 1;
@@ -116,7 +115,7 @@ void insertTrainingEntry(Addr_t pc,Addr_t lastAddress)
         if(find >= 0)
         {
             trainingUnit.clock_pointer = clock_pointer;
-            break;
+            return;
         }
     }
 }
@@ -178,8 +177,14 @@ AddressMapping_t* getPSMapping(Addr_t paddr)
     if(!ps_entry)
     {
         entryIndex = insertAddressMappingEntry(&psAddressMappingCache,amc_address);
+        return &psAddressMappingCache.AddressMappingEntries[entryIndex].mappings[map_index];
     }
-    return &psAddressMappingCache.AddressMappingEntries[entryIndex].mappings[map_index];
+    else
+    {
+        return &ps_entry->mappings[map_index];
+    }
+    
+    
 }
 
 
@@ -213,6 +218,7 @@ void l2_prefetcher_initialize(int cpu_num)
     {
         trainingUnit.TrainingUnitEntries[i].tag = -1;
         trainingUnit.TrainingUnitEntries[i].clock_tag = 0;
+        trainingUnit.TrainingUnitEntries[i].lastAddress = -1;
     }
     trainingUnit.clock_pointer = 0;
     //initilize address mapping caches
@@ -222,7 +228,7 @@ void l2_prefetcher_initialize(int cpu_num)
         psAddressMappingCache.AddressMappingEntries[i].clock_tag = 0;
         for(j = 0;j<PREFETCH_CANDIDATES_PER_ENTRY;j++)
         {
-            psAddressMappingCache.AddressMappingEntries[i].mappings[j].address = 0;
+            psAddressMappingCache.AddressMappingEntries[i].mappings[j].address = -1;
             psAddressMappingCache.AddressMappingEntries[i].mappings[j].counter = 0;
         }
         
@@ -231,7 +237,7 @@ void l2_prefetcher_initialize(int cpu_num)
 
         for(j = 0;j<PREFETCH_CANDIDATES_PER_ENTRY;j++)
         {
-            spAddressMappingCache.AddressMappingEntries[i].mappings[j].address = 0;
+            spAddressMappingCache.AddressMappingEntries[i].mappings[j].address = -1;
             spAddressMappingCache.AddressMappingEntries[i].mappings[j].counter = 0;
         }
     }
@@ -269,9 +275,9 @@ void l2_prefetcher_operate(int cpu_num, unsigned long long int addr, unsigned lo
     
     if(correlated_addr_found)
     {
-        
         AddressMapping_t *mapping_A = getPSMapping(correlated_addr_A);
         AddressMapping_t *mapping_B = getPSMapping(correlated_addr_B);
+        
         if(mapping_A->counter > 0 && mapping_B->counter > 0)
         {
             //Entry for A and B
