@@ -30,7 +30,6 @@ typedef unsigned long long int uint64_t;
 typedef struct TrainingUnitEntry
 {
     Addr_t tag;
-    char valid;
     Addr_t lastAddress;
     char clock_tag; //using clock replacement
 }TrainingUnitEntry_t;
@@ -55,7 +54,6 @@ typedef struct AddressMapping {
 typedef struct AddressMappingEntry
 {
     Addr_t tag;
-    char valid;
     AddressMapping_t mappings[PREFETCH_CANDIDATES_PER_ENTRY];
     char clock_tag;
 }AddressMappingEntry_t;
@@ -214,7 +212,6 @@ void l2_prefetcher_initialize(int cpu_num)
     for(i = 0;i<TRAINING_UNIT_ENTRIES;i++)
     {
         trainingUnit.TrainingUnitEntries[i].tag = -1;
-        trainingUnit.TrainingUnitEntries[i].valid = 0;
         trainingUnit.TrainingUnitEntries[i].clock_tag = 0;
     }
     trainingUnit.clock_pointer = 0;
@@ -222,7 +219,6 @@ void l2_prefetcher_initialize(int cpu_num)
     for(i = 0;i<ADDRESS_MAP_CACHE_ENTRIES;i++)
     {
         psAddressMappingCache.AddressMappingEntries[i].tag = -1;
-        psAddressMappingCache.AddressMappingEntries[i].valid = 0;
         psAddressMappingCache.AddressMappingEntries[i].clock_tag = 0;
         for(j = 0;j<PREFETCH_CANDIDATES_PER_ENTRY;j++)
         {
@@ -231,7 +227,6 @@ void l2_prefetcher_initialize(int cpu_num)
         }
         
         spAddressMappingCache.AddressMappingEntries[i].tag = -1;
-        spAddressMappingCache.AddressMappingEntries[i].valid = 0;
         spAddressMappingCache.AddressMappingEntries[i].clock_tag = 0;
 
         for(j = 0;j<PREFETCH_CANDIDATES_PER_ENTRY;j++)
@@ -248,7 +243,7 @@ void l2_prefetcher_initialize(int cpu_num)
 void l2_prefetcher_operate(int cpu_num, unsigned long long int addr, unsigned long long int ip, int cache_hit)
 {
     // uncomment this line to see all the information available to make prefetch decisions
-    printf("(%lld 0x%llx 0x%llx %d %d %d)\n ", get_current_cycle(0), addr, ip, cache_hit, get_l2_read_queue_occupancy(0), get_l2_mshr_occupancy(0));
+    //printf("(%lld 0x%llx 0x%llx %d %d %d)\n ", get_current_cycle(0), addr, ip, cache_hit, get_l2_read_queue_occupancy(0), get_l2_mshr_occupancy(0));
 
     Addr_t block_address = addr>>6; //cache line address
     Addr_t pc = ip;
