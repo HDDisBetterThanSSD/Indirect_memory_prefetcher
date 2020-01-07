@@ -131,7 +131,6 @@ AddressMappingEntry_t* findAddressMappingEntry(AddressMappingCache_t* cache, Add
             cache->AddressMappingEntries[i].clock_tag = 1;
             return &cache->AddressMappingEntries[i];
         }
-
     } 
     //cache miss
     return NULL;
@@ -183,8 +182,6 @@ AddressMapping_t* getPSMapping(Addr_t paddr)
     {
         return &ps_entry->mappings[map_index];
     }
-    
-    
 }
 
 
@@ -196,7 +193,7 @@ void addStructuralToPhysicalEntry(Addr_t structral_address, Addr_t physical_addr
     if(!sp_entry)
     {
         int sp_entry_index;
-        sp_entry_index =  insertAddressMappingEntry(&spAddressMappingCache,amc_address);
+        sp_entry_index = insertAddressMappingEntry(&spAddressMappingCache,amc_address);
         sp_entry = &spAddressMappingCache.AddressMappingEntries[sp_entry_index];
     }
     AddressMapping_t * mapping = &sp_entry->mappings[map_index];
@@ -262,22 +259,33 @@ void l2_prefetcher_operate(int cpu_num, unsigned long long int addr, unsigned lo
     char correlated_addr_found = 0;
     Addr_t correlated_addr_A = 0;
     Addr_t correlated_addr_B = 0;
-    if(entry)
+    if(entry && entry->lastAddress!=block_address)
     {
-        correlated_addr_found = 1;
-        correlated_addr_A = entry->lastAddress;
-        correlated_addr_B = block_address;
+
+        Addr_t page_A = entry->lastAddress >> 6;
+        Addr_t page_B = block_address >> 6;
+        if(page_A==page_B)
+        {
+            correlated_addr_found = 1;
+            correlated_addr_A = entry->lastAddress;
+            correlated_addr_B = block_address;
+        }
+        // update the entry
+        entry->lastAddress = block_address;
     }
     else
     {
-        insertTrainingEntry(pc,block_address);
+        if(!entry)
+            insertTrainingEntry(pc,block_address);
     }
     
     if(correlated_addr_found)
     {
         AddressMapping_t *mapping_A = getPSMapping(correlated_addr_A);
         AddressMapping_t *mapping_B = getPSMapping(correlated_addr_B);
-        
+
+        printf("%lld %lld %d %d \n",mapping_A->address,mapping_A->counter,mapping_B->address,mapping_B->counter);
+
         if(mapping_A->counter > 0 && mapping_B->counter > 0)
         {
             //Entry for A and B
@@ -340,18 +348,19 @@ void l2_prefetcher_operate(int cpu_num, unsigned long long int addr, unsigned lo
                 AddressMapping_t *spm = &sp_am->mappings[sp_index + d];
                 //generate prefetch
                 if (spm->counter > 0) {
+                    
                     Addr_t pf_addr = spm->address << 6;
                     // addresses.push_back(AddrPriority(pf_addr, 0));
                     // check MSHR occupancy to decide whether to prefetch into the L2 or LLC
                     if(get_l2_mshr_occupancy(0) > 8)
                     {
                         // conservatively prefetch into the LLC, because MSHRs are scarce
-                        l2_prefetch_line(0, addr, pf_addr, FILL_LLC);
+                        int ret = l2_prefetch_line(0, addr, pf_addr, FILL_LLC);
                     }
                     else
                     {
                         // MSHRs not too busy, so prefetch into L2
-                        l2_prefetch_line(0, addr, pf_addr, FILL_L2);
+                        int ret = l2_prefetch_line(0, addr, pf_addr, FILL_L2);
                     }
                 }
             }
